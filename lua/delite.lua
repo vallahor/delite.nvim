@@ -627,30 +627,26 @@ local function delete(row, col, direction)
 				valid = true,
 			},
 		}
-		local is_right = direction == utils.direction.right
-		local ignore_right = M.config.disable_right and M.config.disable_right_default_pairs and is_right
 
-		if not ignore_right then
-			if config_filetype then
-				for _, index in ipairs(config_filetype.pairs) do
-					if not context.lookup_line.valid then
-						break
-					end
-					local item = store.pairs.ft[index]
-					if not item.disable_right and delete_pairs(context, item.pattern.left, item.pattern.right) then
-						return
-					end
-				end
-			end
-
-			for _, item in ipairs(store.pairs.default) do
+		if config_filetype then
+			for _, index in ipairs(config_filetype.pairs) do
 				if not context.lookup_line.valid then
 					break
 				end
-				if not item.disable_right and not in_ignore_list(item, filetype) then
-					if delete_pairs(context, item.pattern.left, item.pattern.right) then
-						return
-					end
+				local item = store.pairs.ft[index]
+				if delete_pairs(context, item.pattern.left, item.pattern.right) then
+					return
+				end
+			end
+		end
+
+		for _, item in ipairs(store.pairs.default) do
+			if not context.lookup_line.valid then
+				break
+			end
+			if not in_ignore_list(item, filetype) then
+				if delete_pairs(context, item.pattern.left, item.pattern.right) then
+					return
 				end
 			end
 		end
