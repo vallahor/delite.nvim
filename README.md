@@ -37,6 +37,8 @@ word-word| -> word-|
 WordWord| -> Word|
 WordWORD| -> Word|
 WordWord1| -> Word|
+WordWord12345| -> WordWord|
+Word         | -> Word|
 
 delete.next_word
 |word_word -> |_word
@@ -44,6 +46,8 @@ delete.next_word
 |WordWord -> |Word
 |WordWORD -> |WORD
 |WordWord1  -> |Word1
+|12345Word -> |Word
+|     Word -> |Word
 
 ===| -> |
 !==| -> |
