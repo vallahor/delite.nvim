@@ -83,7 +83,7 @@ def render(assigns) do                | def render(assigns) do
   """                                 |      
 end                                   |  
 
-Before: <c-bs> (delite.previous_word) | After:
+Before: <c-bs> (delite.next_word) | After:
 def render(assigns) do                | def render(assigns) do 
   ~H"""                               |   |    
                                       | end
@@ -106,8 +106,12 @@ value = %{|                        | value_list = [|, %{}]
 ```
 
 `Delite` adds wildcards in the patterns.
+
+
 Right: `"^(pattern)item.suffix"` (delite.next_word)
 Left: `"item.prefix(pattern)$"` (delite.previous_word)
+
+
 The `prefix` and `suffix` will not be deleted it serves as a delimiter beyond
 the regex.
 
