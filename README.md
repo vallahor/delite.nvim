@@ -167,7 +167,7 @@ delite.remove_pattern_from_default_pairs("<")
 --- Only punctuation characters are allowed, and the patterns are automatically escaped.
 ---@param config { left: string, right: string, disable_right?: boolean }
 ---@param opts {  not_filetypes?: string[] }
-delite.insert_default_pairs_priority({ left = "%%{", right = "}" })
+delite.insert_default_pairs_priority({ left = "%{", right = "}" })
 
 
 --- insert_rule
