@@ -38,6 +38,7 @@ WordWord| -> Word|
 WordWORD| -> Word|
 WordWord1| -> Word|
 
+`delete.next_word`
 |word_word -> |_word
 |word-word -> |-word
 |WordWord -> |Word
