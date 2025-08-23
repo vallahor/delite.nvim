@@ -33,7 +33,7 @@ The `|` is representing the cursor position.
 
 delete.previous_word
 word_word| -> word_|
-word-word| -> word_|
+word-word| -> word-|
 WordWord| -> Word|
 WordWORD| -> Word|
 WordWord1| -> Word|
@@ -118,6 +118,19 @@ the regex.
 
 Creating `Rules` and `Patterns`:
 ```lua
+
+-- Precedence matters!
+-- Execution order:
+-- Filetype-specific:
+--   1. Filetype Rules
+--   2. Filetype Patterns
+--   3. Filetype Pairs
+-- Global:
+--   4. Rules
+--   5. Patterns
+--   6. Pairs (defaults first, then custom)
+-- Defaults are applied in the order they’re defined:
+--   Digits → Uppercase → Word
 
 -- Edit `default_pairs` or replace the default ones in the config.
 delite.edit_default_pairs("'", { not_filetypes = { "ocaml", "rust" } })
