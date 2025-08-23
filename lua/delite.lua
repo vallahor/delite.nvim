@@ -44,15 +44,6 @@ local store = {
 	filetypes = {},
 }
 
-local store_index = {
-	["pairs.ft"] = store.pairs.ft,
-	["pairs.default"] = store.pairs.default,
-	["rules.ft"] = store.rules.ft,
-	["rules.default"] = store.rules.default,
-	["patterns.ft"] = store.patterns.ft,
-	["patterns.default"] = store.patterns.default,
-}
-
 M.config = {
 	delete_blank_lines_until_non_whitespace = true, -- Deletes all blank lines, spaces, and tabs until a non-whitespace character or EOF.
 	multi_punctuation = true, -- Matches repeated punctuation sequences like `!==`, `...`, `++`, `===`. See `allowed_multi_punctuation`.
@@ -135,36 +126,36 @@ local function get_or_create_filetype(filetype)
 	return ft
 end
 
-local function insert_into(store_default, store_ft, elem, opts)
-	opts.filetypes = opts.filetypes or nil
-	opts.not_filetypes = opts.not_filetypes or nil
+local function insert_into(context, elem)
+	context.filetypes = context.filetypes or nil
+	context.not_filetypes = context.not_filetypes or nil
 
-	if opts.filetypes then
-		local store_ft_index = #store_ft + 1
-		for _, filetype in ipairs(opts.filetypes) do
+	if context.filetypes then
+		local store_ft_index = #context.ft_store + 1
+		for _, filetype in ipairs(context.filetypes) do
 			local ft = get_or_create_filetype(filetype)
-			local ft_list = ft[opts.ft_list]
+			local ft_list = ft[context.ft_list]
 			table.insert(ft_list, store_ft_index)
 		end
-		table.insert(store_ft, elem)
+		table.insert(context.ft_store, elem)
 		return
 	end
 
-	if opts.not_filetypes then
-		elem.not_filetypes = elem.not_filetypes or {}
-		for _, filetype in ipairs(opts.not_filetypes) do
+	if context.not_filetypes then
+		elem.not_filetypes = {}
+		for _, filetype in ipairs(context.not_filetypes) do
 			local _ = get_or_create_filetype(filetype)
 			elem.not_filetypes[filetype] = true
 		end
 	end
-	table.insert(store_default, elem)
+	table.insert(context.default, elem)
 end
 
 local function escape_pattern(text)
 	return text:gsub("([%p])", "%%%1")
 end
 
-M.insert_pair_rule = function(config, opts)
+M.insert_pair_rule = function(config, context)
 	local pair = {
 		pattern = {
 			left = config.left .. "$",
@@ -174,46 +165,97 @@ M.insert_pair_rule = function(config, opts)
 		not_filetypes = nil,
 	}
 
-	insert_into(store_index[opts.type], store_index[opts.ft], pair, opts)
+	insert_into(context, pair)
 end
 
+---@param config { left: string, right: string, disable_right?: boolean }
+---@param opts { filetypes: string[], not_filetypes: string[] }
 M.insert_pair = function(config, opts)
 	if not config or not config.left and config.right then
 		return
 	end
 
 	opts = opts or {}
-	opts.type = "pairs.default"
-	opts.ft = "pairs.ft"
-	opts.ft_list = "pairs"
+	local context = {
+		default = store.pairs.default,
+		ft_store = store.pairs.ft,
+		ft_list = "pairs",
+		filetypes = opts.filetypes or nil,
+		not_filetypes = opts.not_filetypes or nil,
+	}
 
 	config.left = escape_pattern(config.left)
 	config.right = escape_pattern(config.right)
 
-	M.insert_pair_rule(config, opts)
+	M.insert_pair_rule(config, context)
 end
 
+---@param config { left: string, right: string, disable_right?: boolean }
+---@param opts {  not_filetypes?: string[] }
+M.insert_default_pairs_priority = function(config, opts)
+	if not config or not config.left and config.right then
+		return
+	end
+
+	opts = opts or {}
+
+	config.left = escape_pattern(config.left)
+	config.right = escape_pattern(config.right)
+
+	local pair = {
+		pattern = {
+			left = config.left .. "$",
+			right = "^" .. config.right,
+		},
+		disable_right = config.disable_right or false,
+		not_filetypes = nil,
+	}
+
+	if opts.not_filetypes then
+		pair.not_filetypes = {}
+		for _, filetype in ipairs(opts.not_filetypes) do
+			local _ = get_or_create_filetype(filetype)
+			pair.not_filetypes[filetype] = true
+		end
+	end
+
+	table.insert(store.pairs.default, 1, pair)
+end
+
+---@param config { left: string, right: string, disable_right?: boolean }
+---@param opts { filetypes?: string[], not_filetypes?: string[] }
 M.insert_rule = function(config, opts)
 	if not config or not config.left and config.right then
 		return
 	end
 
 	opts = opts or {}
-	opts.type = "rules.default"
-	opts.ft = "rules.ft"
-	opts.ft_list = "rules"
+	local context = {
+		default = store.rules.default,
+		ft_store = store.rules.ft,
+		ft_list = "rules",
+		filetypes = opts.filetypes or nil,
+		not_filetypes = opts.not_filetypes or nil,
+	}
 
-	M.insert_pair_rule(config, opts)
+	M.insert_pair_rule(config, context)
 end
 
+---@param config { pattern: string, prefix?: string, suffix?: string, disable_right?: boolean }
+---@param opts { filetypes?: string[], not_filetypes?: string[] }
 M.insert_pattern = function(config, opts)
 	if not config or not config.pattern then
 		return
 	end
 
 	opts = opts or {}
-	opts.type = "patterns.default"
-	opts.ft_list = "patterns"
+	local context = {
+		default = store.patterns.default,
+		ft_store = store.patterns.ft,
+		ft_list = "patterns",
+		filetypes = opts.filetypes or nil,
+		not_filetypes = opts.not_filetypes or nil,
+	}
 
 	-- Adds wildcards in the pattern and aditional rules.
 	-- Right: "^(pattern)item.suffix"
@@ -228,17 +270,11 @@ M.insert_pattern = function(config, opts)
 		not_filetypes = nil,
 	}
 
-	insert_into(store_index[opts.type], store.patterns.ft, pattern, opts)
+	insert_into(context, pattern)
 end
 
-M.insert_default = function(config)
-	if not config or not config.left or not config.right then
-		return
-	end
-
-	table.insert(M.config.defaults, config)
-end
-
+---@param pattern string
+---@param config { left: string, right?: string, disable_right?: boolean, not_filetypes?: string[] }
 M.edit_default_pairs = function(pattern, config)
 	if not config then
 		return
@@ -246,10 +282,12 @@ M.edit_default_pairs = function(pattern, config)
 
 	local left = config.left or nil
 	local right = config.right or nil
+	local disable_right = config.disable_right or nil
 	local not_filetypes = config.not_filetypes or nil
+
 	pattern = escape_pattern(pattern) .. "$"
 
-	local default_pairs = store_index["pairs.default"]
+	local default_pairs = store.pairs.default
 	for _, pair in ipairs(default_pairs) do
 		if pair.pattern.left == pattern then
 			if left then
@@ -260,6 +298,10 @@ M.edit_default_pairs = function(pattern, config)
 				pair.pattern.right = right
 			end
 
+			if disable_right then
+				pair.disable_right = disable_right
+			end
+
 			if not_filetypes then
 				pair.not_filetypes = pair.not_filetypes or {}
 				for _, filetype in ipairs(not_filetypes) do
@@ -268,6 +310,23 @@ M.edit_default_pairs = function(pattern, config)
 				end
 			end
 
+			break
+		end
+	end
+end
+
+---@param pattern string
+M.remove_pattern_from_default_pairs = function(pattern)
+	if pattern == "" then
+		return
+	end
+
+	pattern = escape_pattern(pattern) .. "$"
+
+	local default_pairs = store.pair.default
+	for i, pair in ipairs(default_pairs) do
+		if pair.pattern.left == pattern then
+			table.remove(default_pairs, i)
 			break
 		end
 	end
@@ -507,6 +566,7 @@ local function delete_word(row, col, direction)
 	local filetype = vim.bo[bufnr].filetype
 	local config_filetype = store.filetypes[filetype]
 
+	local is_punctuation = line:sub(col, col):match("%p")
 	local is_right = direction == utils.direction.right
 	local ignore_right = M.config.disable_right and is_right
 
@@ -533,7 +593,7 @@ local function delete_word(row, col, direction)
 			end
 		end
 
-		if not ignore_right then
+		if not ignore_right and is_punctuation then
 			for _, index in ipairs(config_filetype.pairs) do
 				if not context.lookup_line.valid then
 					break
@@ -570,7 +630,7 @@ local function delete_word(row, col, direction)
 		end
 	end
 
-	if not ignore_right then
+	if not ignore_right and is_punctuation then
 		for _, item in ipairs(store.pairs.default) do
 			if not context.lookup_line.valid then
 				break
@@ -583,7 +643,7 @@ local function delete_word(row, col, direction)
 		end
 	end
 
-	if line:sub(col, col):match("%p") then
+	if is_punctuation then
 		if M.config.multi_punctuation then
 			if delete_pattern(context, M.config.allowed_multi_punctuation[direction]) then
 				return

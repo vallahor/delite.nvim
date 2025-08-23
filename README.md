@@ -136,23 +136,60 @@ Creating `Rules` and `Patterns`:
 -- Defaults are applied in the order they’re defined:
 --   Digits → Uppercase → Word
 
+-- `Default Pairs`. Note: only punctuation allowed, anything other than
+-- punctuation should be added as a rule.
+
+--- If `filetypes` is omitted, the pattern is global.
+--- `not_filetypes` only applies to global patterns.
+
+--- insert_pair
+--- Only punctuation characters are allowed, and the patterns are automatically escaped.
+---@param config { left: string, right: string, disable_right?: boolean }
+---@param opts { filetypes?: string[], not_filetypes?: string[] }
+delite.insert_pair({ left = "--", right = "--", disable_right = true })
+
+--- edit_default_pairs
+---@param pattern string
+---@param config { left: string, right?: string, disable_right?: boolean, not_filetypes?: string[] }
+
 -- Edit `default_pairs` or replace the default ones in the config.
 delite.edit_default_pairs("'", { not_filetypes = { "ocaml", "rust" } })
+
+--- remove_pattern_from_default_pairs
+-- Remove some default pattern in case you don't want to copy all the patterns
+-- and paste them in your config.
+---@param pattern string
+
+delite.remove_pattern_from_default_pairs("<")
+
+--- insert_default_pairs_priority
+--- Will be inserted before the default patterns 
+--- Only punctuation characters are allowed, and the patterns are automatically escaped.
+---@param config { left: string, right: string, disable_right?: boolean }
+---@param opts {  not_filetypes?: string[] }
+delite.insert_default_pairs_priority({ left = "%%{", right = "}" })
+
+
+--- insert_rule
+---@param config { left: string, right: string, disable_right?: boolean }
+---@param opts { filetypes?: string[], not_filetypes?: string[] }
 
 -- Create rules that only works in the filetypes specified.
 -- Rule for: %{}
 delite.insert_rule({ left = "%%{", right = "}", { filetypes = { "elixir" } } })
 -- Rule for: ~H""" """ and any other uppercase.
 delite.insert_rule({ left = '~%u"""', right = '"""', { filetypes = { "elixir" } } })
--- Rule for: __MODULE__, __struct__, and any other pattern that has this behavior in elixir.
-delite.insert_pattern({ pattern = "__[%u%l]+__" }, { filetypes = { "elixir" } })
-
+-- Rule for: markdown
 delite.insert_rule({ left = "```%w*", right = "```", { filetypes = { "markdown" } } })
-
 -- Create a global rule and ignores when the filetype is `html`
 delite.insert_rule({ left = "<>", right = "</>", { not_filetypes = { "html" } } })
 
+--- insert_pattern
+---@param config { pattern: string, prefix?: string, suffix?: string, disable_right?: boolean }
+---@param opts { filetypes?: string[], not_filetypes?: string[] }
 
+-- Rule for: __MODULE__, __struct__, and any other pattern that has this behavior in elixir.
+delite.insert_pattern({ pattern = "__[%u%l]+__" }, { filetypes = { "elixir" } })
 -- Hex numbers: Delete til `0x`. Before: 0x12ab3c| `press <c-bs>` After: 0x|
 delite.insert_pattern({ pattern = "%x%x%x%x%x%x", prefix = "0x" })
 ```
@@ -169,6 +206,7 @@ setup:
     separator = " ",
     times = 1,
   },
+  -- NOTE: The patterns defined here will be escaped in the config.
   default_pairs = {
     { left = "(", right = ")", not_filetypes = nil },
     { left = "{", right = "}", not_filetypes = nil },
