@@ -59,7 +59,7 @@ delete.next_word
 {(|)} -> {|}
 {|} -> |
 
-Hex number patter:
+Hex number pattern:
 0x12ab12| -> 0x12ab|
 
 delite.insert_pattern({ pattern = "%x%x%x%x%x%x", prefix = "0x" })
