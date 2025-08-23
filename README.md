@@ -31,14 +31,14 @@ return {
 ```
 The `|` is representing the cursor position.
 
-`delete.previous_word`
+delete.previous_word
 word_word| -> word_|
 word-word| -> word_|
 WordWord| -> Word|
 WordWORD| -> Word|
 WordWord1| -> Word|
 
-`delete.next_word`
+delete.next_word
 |word_word -> |_word
 |word-word -> |-word
 |WordWord -> |Word
