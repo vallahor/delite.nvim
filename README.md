@@ -145,7 +145,7 @@ Creating `Rules` and `Patterns`:
 --- insert_pair
 --- Only punctuation characters are allowed, and the patterns are automatically escaped.
 ---@param config { left: string, right: string, disable_right?: boolean }
----@param opts { filetypes?: string[], not_filetypes?: string[] }
+---@param opts? { filetypes?: string[], not_filetypes?: string[] }
 delite.insert_pair({ left = "--", right = "--", disable_right = true })
 
 --- edit_default_pairs
@@ -166,13 +166,13 @@ delite.remove_pattern_from_default_pairs("<")
 --- Will be inserted before the default patterns 
 --- Only punctuation characters are allowed, and the patterns are automatically escaped.
 ---@param config { left: string, right: string, disable_right?: boolean }
----@param opts {  not_filetypes?: string[] }
+---@param opts? {  not_filetypes?: string[] }
 delite.insert_default_pairs_priority({ left = "%{", right = "}" })
 
 
 --- insert_rule
 ---@param config { left: string, right: string, disable_right?: boolean }
----@param opts { filetypes?: string[], not_filetypes?: string[] }
+---@param opts? { filetypes?: string[], not_filetypes?: string[] }
 
 -- Create rules that only works in the filetypes specified.
 -- Rule for: %{}
@@ -186,7 +186,7 @@ delite.insert_rule({ left = "<>", right = "</>", { not_filetypes = { "html" } } 
 
 --- insert_pattern
 ---@param config { pattern: string, prefix?: string, suffix?: string, disable_right?: boolean }
----@param opts { filetypes?: string[], not_filetypes?: string[] }
+---@param opts? { filetypes?: string[], not_filetypes?: string[] }
 
 -- Rule for: __MODULE__, __struct__, and any other pattern that has this behavior in elixir.
 delite.insert_pattern({ pattern = "__[%u%l]+__" }, { filetypes = { "elixir" } })

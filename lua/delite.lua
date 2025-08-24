@@ -169,7 +169,7 @@ M.insert_pair_rule = function(config, context)
 end
 
 ---@param config { left: string, right: string, disable_right?: boolean }
----@param opts { filetypes: string[], not_filetypes: string[] }
+---@param opts? { filetypes: string[], not_filetypes: string[] }
 M.insert_pair = function(config, opts)
 	if not config or not config.left and config.right then
 		return
@@ -191,7 +191,7 @@ M.insert_pair = function(config, opts)
 end
 
 ---@param config { left: string, right: string, disable_right?: boolean }
----@param opts {  not_filetypes?: string[] }
+---@param opts? {  not_filetypes?: string[] }
 M.insert_default_pairs_priority = function(config, opts)
 	if not config or not config.left and config.right then
 		return
@@ -223,7 +223,7 @@ M.insert_default_pairs_priority = function(config, opts)
 end
 
 ---@param config { left: string, right: string, disable_right?: boolean }
----@param opts { filetypes?: string[], not_filetypes?: string[] }
+---@param opts? { filetypes?: string[], not_filetypes?: string[] }
 M.insert_rule = function(config, opts)
 	if not config or not config.left and config.right then
 		return
@@ -242,7 +242,7 @@ M.insert_rule = function(config, opts)
 end
 
 ---@param config { pattern: string, prefix?: string, suffix?: string, disable_right?: boolean }
----@param opts { filetypes?: string[], not_filetypes?: string[] }
+---@param opts? { filetypes?: string[], not_filetypes?: string[] }
 M.insert_pattern = function(config, opts)
 	if not config or not config.pattern then
 		return
