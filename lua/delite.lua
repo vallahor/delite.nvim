@@ -104,7 +104,7 @@ M.setup = function(config)
 end
 
 local function insert_undo()
-	if not M.config.disable_undo then
+	if not M.config.disable_undo and vim.fn.mode() == "i" then
 		local mark = vim.api.nvim_replace_termcodes("<c-g>u", true, false, true)
 		vim.api.nvim_feedkeys(mark, "i", false)
 	end
@@ -750,6 +750,11 @@ end
 M.previous_word = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	delete_word(row - 1, col, utils.direction.left)
+end
+
+M.previous_word_normal_mode = function()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	delete_word(row - 1, col + 1, utils.direction.left)
 end
 
 M.next_word = function()
