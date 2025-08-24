@@ -13,6 +13,8 @@ return {
 
         vim.keymap.set("i", "<c-bs>", delite.previous_word)
         vim.keymap.set("i", "<c-del>", delite.next_word)
+        vim.keymap.set("n", "<c-bs>", delite.previous_word_normal_mode)
+        vim.keymap.set("n", "<c-del>", delite.next_word_normal_mode)
 
         vim.keymap.set("i", "<bs>", delite.previous)
         -- If not planning to use the right deletion don't assign that key, use the default <del> behavior.
