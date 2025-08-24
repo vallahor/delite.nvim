@@ -542,7 +542,7 @@ local function delete_word(row, col, direction)
 	}
 
 	if col == 0 or col > #line then
-		if M.config.delete_empty_lines_until_next_char then
+		if M.config.delete_blank_lines_until_non_whitespace then
 			insert_undo()
 			consume_spaces_and_lines(line, row, col, direction, "")
 			return
