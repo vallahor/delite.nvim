@@ -13,12 +13,24 @@ return {
 
         vim.keymap.set("i", "<c-bs>", delite.previous_word)
         vim.keymap.set("i", "<c-del>", delite.next_word)
-        vim.keymap.set("n", "<c-bs>", delite.previous_word_normal_mode)
-        vim.keymap.set("n", "<c-del>", delite.next_word_normal_mode)
 
         vim.keymap.set("i", "<bs>", delite.previous)
-        -- If not planning to use the right deletion don't assign that key, use the default <del> behavior.
         vim.keymap.set("i", "<del>", delite.next)
+
+        -- Word deletion at the current cursor position
+        -- Seeks previous non-whitespace when at beginning of line
+        vim.keymap.set("n", "<c-bs>", delite.previous_word_normal_mode)
+        -- Seeks next non-whitespace when at end of line
+        vim.keymap.set("n", "<c-del>", delite.next_word_normal_mode)
+
+        -- Works like insert mode <BS>/<Del> but matches pairs:
+        -- <bs> → delete previous char / match opening pair
+        -- <del> → delete current char / match closing pair
+        vim.keymap.set("n", "<bs>", delite.previous)
+        vim.keymap.set("n", "<del>", delite.next)
+
+        -- Join without moving the cursor
+        vim.keymap.set("i", "<c-j>", delite.join)
 
         vim.keymap.set("n", "J", delite.join)
 
