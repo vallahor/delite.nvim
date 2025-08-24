@@ -754,12 +754,26 @@ end
 
 M.previous_word_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete_word(row - 1, col + 1, utils.direction.left)
+	col = (col + 1 == 1 and 0) or col + 1
+	delete_word(row - 1, col, utils.direction.left)
+	local line_len = #vim.api.nvim_get_current_line()
+	row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	if col > 0 and col + 1 < line_len then
+		vim.api.nvim_win_set_cursor(0, { row, col - 1 })
+	end
 end
 
 M.next_word = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	delete_word(row - 1, col + 1, utils.direction.right)
+end
+
+M.next_word_normal_mode = function()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	local line_len = #vim.api.nvim_get_current_line()
+	col = col + 1
+	col = (col == line_len and col + 1) or col
+	delete_word(row - 1, col, utils.direction.right)
 end
 
 M.previous = function()
