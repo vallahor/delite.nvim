@@ -421,7 +421,7 @@ local function consume_spaces_and_lines(text, row, col, direction, separator)
 	local line, new_row, new_col = eat_empty_lines(text, row, col, direction)
 
 	if not line then
-		return
+		return -1, -1
 	end
 
 	local left_row, left_col, right_row, right_col = get_range_lines(row, col, new_row, new_col, direction)
@@ -432,6 +432,8 @@ local function consume_spaces_and_lines(text, row, col, direction, separator)
 	end
 
 	vim.api.nvim_buf_set_text(utils.bufnr, left_row, left_col, right_row, right_col, { separator })
+
+	return left_row, left_col
 end
 
 ---@param opts table
@@ -453,6 +455,9 @@ local function delete_pattern(context, pattern)
 
 	if count > 0 then
 		local start_col, end_col = calc_col(context.line.col, count, context.direction)
+
+		context.line.col = start_col
+
 		insert_undo()
 		vim.api.nvim_buf_set_text(utils.bufnr, context.line.row, start_col, context.line.row, end_col, {})
 		return true
@@ -511,6 +516,9 @@ local function delete_pairs(context, left, right)
 				right_col = right_col + left_count - 1
 			end
 
+			context.line.row = left_row
+			context.line.col = left_col
+
 			insert_undo()
 			vim.api.nvim_buf_set_text(utils.bufnr, left_row, left_col, right_row, right_col, {})
 		end
@@ -524,6 +532,7 @@ end
 ---@param row integer
 ---@param col integer
 ---@param direction string
+---@return  { [1]: number, [2]: number }?
 local function delete_word(row, col, direction)
 	local line = vim.api.nvim_get_current_line()
 	local start_col, end_col = get_range_line(col, #line, direction)
@@ -544,8 +553,8 @@ local function delete_word(row, col, direction)
 	if col == 0 or col > #line then
 		if M.config.delete_blank_lines_until_non_whitespace then
 			insert_undo()
-			consume_spaces_and_lines(line, row, col, direction, "")
-			return
+			row, col = consume_spaces_and_lines(line, row, col, direction, "")
+			return { row, col }
 		else
 			if direction == utils.direction.right then
 				local delete = vim.api.nvim_replace_termcodes(utils.keys.del, true, false, true)
@@ -555,11 +564,11 @@ local function delete_word(row, col, direction)
 				vim.api.nvim_feedkeys(backspace, "i", false)
 			end
 		end
-		return
+		return nil
 	end
 
 	if delete_pattern(context, utils.seek_spaces[direction]) then
-		return
+		return { context.line.row, context.line.col }
 	end
 
 	local bufnr = vim.api.nvim_get_current_buf()
@@ -581,7 +590,7 @@ local function delete_word(row, col, direction)
 					not (item.disable_right and is_right)
 					and delete_pairs(context, item.pattern.left, item.pattern.right)
 				then
-					return
+					return { context.line.row, context.line.col }
 				end
 			end
 		end
@@ -589,7 +598,7 @@ local function delete_word(row, col, direction)
 		for _, index in ipairs(config_filetype.patterns) do
 			local item = store.patterns.ft[index]
 			if not (item.disable_right and is_right) and delete_pattern(context, item.pattern[direction]) then
-				return
+				return { context.line.row, context.line.col }
 			end
 		end
 
@@ -603,7 +612,7 @@ local function delete_word(row, col, direction)
 					not (item.disable_right and is_right)
 					and delete_pairs(context, item.pattern.left, item.pattern.right)
 				then
-					return
+					return { context.line.row, context.line.col }
 				end
 			end
 		end
@@ -616,7 +625,7 @@ local function delete_word(row, col, direction)
 			end
 			if not (item.disable_right and is_right) and not in_ignore_list(item, filetype) then
 				if delete_pairs(context, item.pattern.left, item.pattern.right) then
-					return
+					return { context.line.row, context.line.col }
 				end
 			end
 		end
@@ -625,7 +634,7 @@ local function delete_word(row, col, direction)
 	for _, item in ipairs(store.patterns.default) do
 		if not (item.disable_right and is_right) and not in_ignore_list(item, filetype) then
 			if delete_pattern(context, item.pattern[direction]) then
-				return
+				return { context.line.row, context.line.col }
 			end
 		end
 	end
@@ -637,7 +646,7 @@ local function delete_word(row, col, direction)
 			end
 			if not (item.disable_right and is_right) and not in_ignore_list(item, filetype) then
 				if delete_pairs(context, item.pattern.left, item.pattern.right) then
-					return
+					return { context.line.row, context.line.col }
 				end
 			end
 		end
@@ -646,17 +655,17 @@ local function delete_word(row, col, direction)
 	if is_punctuation then
 		if M.config.multi_punctuation then
 			if delete_pattern(context, M.config.allowed_multi_punctuation[direction]) then
-				return
+				return { context.line.row, context.line.col }
 			end
 		end
 		if delete_pattern(context, utils.seek_punctuation[direction]) then
-			return
+			return { context.line.row, context.line.col }
 		end
 	end
 
 	for _, default in pairs(M.config.defaults) do
 		if delete_pattern(context, default[direction]) then
-			return
+			return { context.line.row, context.line.col }
 		end
 	end
 end
@@ -749,23 +758,25 @@ end
 
 M.previous_word = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete_word(row - 1, col, utils.direction.left)
+	_ = delete_word(row - 1, col, utils.direction.left)
 end
 
 M.previous_word_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	col = (col + 1 == 1 and 0) or col + 1
-	delete_word(row - 1, col, utils.direction.left)
-	local line_len = #vim.api.nvim_get_current_line()
-	row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	if col > 0 and col + 1 < line_len then
-		vim.api.nvim_win_set_cursor(0, { row, col - 1 })
+	local new_pos = delete_word(row - 1, col, utils.direction.left)
+
+	if new_pos then
+		row, col = new_pos[1], new_pos[2]
+		if col > 0 then
+			vim.api.nvim_win_set_cursor(0, { row + 1, col - 1 })
+		end
 	end
 end
 
 M.next_word = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete_word(row - 1, col + 1, utils.direction.right)
+	_ = delete_word(row - 1, col + 1, utils.direction.right)
 end
 
 M.next_word_normal_mode = function()
@@ -773,7 +784,15 @@ M.next_word_normal_mode = function()
 	local line_len = #vim.api.nvim_get_current_line()
 	col = col + 1
 	col = (col == line_len and col + 1) or col
-	delete_word(row - 1, col, utils.direction.right)
+
+	local new_pos = delete_word(row - 1, col, utils.direction.right)
+
+	if new_pos then
+		row, col = new_pos[1], new_pos[2]
+		if col > 0 and col < #vim.api.nvim_get_current_line() then
+			vim.api.nvim_win_set_cursor(0, { row + 1, col })
+		end
+	end
 end
 
 M.previous = function()
