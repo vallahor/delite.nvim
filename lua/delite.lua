@@ -714,9 +714,6 @@ local function delete(key, row, col, direction)
 		end
 	end
 
-	if vim.fn.mode() == "n" then
-		key = utils.keys.x
-	end
 	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "n", true)
 end
 
@@ -771,12 +768,12 @@ end
 
 M.previous_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete(utils.keys.bs, row - 1, col + 1, utils.direction.left)
+	delete(utils.keys.x, row - 1, col + 1, utils.direction.left)
 end
 
 M.next_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete(utils.keys.del, row - 1, col + 1, utils.direction.right)
+	delete(utils.keys.x, row - 1, col + 1, utils.direction.right)
 end
 
 M.join = function(opts)
