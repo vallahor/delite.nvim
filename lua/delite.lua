@@ -5,6 +5,7 @@ local utils = {
 	keys = {
 		bs = "<bs>",
 		del = "<del>",
+		x = "x",
 	},
 	direction = {
 		left = "left",
@@ -668,6 +669,7 @@ end
 local function delete(key, row, col, direction)
 	local line = vim.api.nvim_get_current_line()
 	local char = line:sub(col, col)
+	local found = true
 
 	if char:match("%p") then
 		local bufnr = vim.api.nvim_get_current_buf()
@@ -696,7 +698,7 @@ local function delete(key, row, col, direction)
 				end
 				local item = store.pairs.ft[index]
 				if delete_pairs(context, item.pattern.left, item.pattern.right) then
-					return
+					return found
 				end
 			end
 		end
@@ -707,7 +709,7 @@ local function delete(key, row, col, direction)
 			end
 			if not in_ignore_list(item, filetype) then
 				if delete_pairs(context, item.pattern.left, item.pattern.right) then
-					return
+					return found
 				end
 			end
 		end
@@ -715,34 +717,10 @@ local function delete(key, row, col, direction)
 
 	if vim.fn.mode() == "i" then
 		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "n", true)
-	else
-		local rows = vim.api.nvim_buf_line_count(0)
-		if rows == 1 and #line == 0 or col > #line and row + 1 >= rows then
-			return nil
-		end
-
-		local start_row, start_col = row, col
-		local end_row, end_col = row, col
-
-		if direction == utils.direction.right then
-			start_col = col - 1
-
-			if col > #line and row + 1 < rows then
-				end_row = row + 1
-				end_col = 0
-			end
-		elseif direction == utils.direction.left then
-			if col > 0 then
-				start_col = col - 1
-			elseif row > 0 then
-				start_row = row - 1
-				line = vim.api.nvim_buf_get_lines(utils.bufnr, start_row, start_row + 1, true)[1]
-				start_col = #line
-			end
-		end
-
-		vim.api.nvim_buf_set_text(utils.bufnr, start_row, start_col, end_row, end_col, {})
+		return found
 	end
+
+	return not found
 end
 
 M.previous_word = function()
@@ -796,12 +774,24 @@ end
 
 M.previous_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete(utils.keys.bs, row - 1, col + 1, utils.direction.left)
+	if delete(utils.keys.bs, row - 1, col + 1, utils.direction.left) then
+		return
+	end
+
+	if col > 0 then
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(utils.keys.x, true, false, true), "n", true)
+		vim.api.nvim_win_set_cursor(0, { row, col - 1 })
+	end
 end
 
 M.next_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete(utils.keys.del, row - 1, col + 1, utils.direction.right)
+	if delete(utils.keys.del, row - 1, col + 1, utils.direction.right) then
+		return
+	end
+	if col + 1 < #vim.api.nvim_get_current_line() then
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(utils.keys.x, true, false, true), "n", true)
+	end
 end
 
 M.join = function(opts)
