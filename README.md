@@ -25,8 +25,8 @@ return {
         vim.keymap.set("n", "<c-del>", delite.next_word_normal_mode)
 
         -- Works like insert mode <BS>/<Del> but matches pairs:
-        -- <bs> delete current char / match opening pair
-        -- <del> delete current char / match closing pair
+        -- <bs>  match opening pair or fallback to delete current char
+        -- <del>  match closing pair or fallback to delete current char
         vim.keymap.set("n", "<bs>", delite.previous_normal_mode)
         vim.keymap.set("n", "<del>", delite.next_normal_mode)
 
