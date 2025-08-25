@@ -127,9 +127,6 @@ local function get_or_create_filetype(filetype)
 end
 
 local function insert_into(context, elem)
-	context.filetypes = context.filetypes or nil
-	context.not_filetypes = context.not_filetypes or nil
-
 	if context.filetypes then
 		local store_ft_index = #context.ft_store + 1
 		for _, filetype in ipairs(context.filetypes) do
@@ -323,7 +320,7 @@ M.remove_pattern_from_default_pairs = function(pattern)
 
 	pattern = escape_pattern(pattern) .. "$"
 
-	local default_pairs = store.pair.default
+	local default_pairs = store.pairs.default
 	for i, pair in ipairs(default_pairs) do
 		if pair.pattern.left == pattern then
 			table.remove(default_pairs, i)
