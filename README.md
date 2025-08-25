@@ -20,7 +20,8 @@ return {
         -- Word deletion at the current cursor position
         -- Seeks previous non-whitespace when at beginning of line
         vim.keymap.set("n", "<c-bs>", delite.previous_word_normal_mode)
-        -- Seeks next non-whitespace when at end of line
+        -- Deletes newline(s) and following whitespaces when at end of line (acting like a join line)
+        -- and positions the cursor at the next non-whitespace char.
         vim.keymap.set("n", "<c-del>", delite.next_word_normal_mode)
 
         -- Works like insert mode <BS>/<Del> but matches pairs:
