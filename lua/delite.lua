@@ -673,6 +673,7 @@ end
 ---@param row integer
 ---@param col integer
 ---@param direction string
+---@return  { [1]: number, [2]: number }?
 local function delete(row, col, direction)
 	local line = vim.api.nvim_get_current_line()
 	local char = line:sub(col, col)
@@ -704,7 +705,7 @@ local function delete(row, col, direction)
 				end
 				local item = store.pairs.ft[index]
 				if delete_pairs(context, item.pattern.left, item.pattern.right) then
-					return
+					return { context.line.row, context.line.col }
 				end
 			end
 		end
@@ -715,7 +716,7 @@ local function delete(row, col, direction)
 			end
 			if not in_ignore_list(item, filetype) then
 				if delete_pairs(context, item.pattern.left, item.pattern.right) then
-					return
+					return { context.line.row, context.line.col }
 				end
 			end
 		end
@@ -730,7 +731,7 @@ local function delete(row, col, direction)
 	--- expected.
 	local rows = vim.api.nvim_buf_line_count(0)
 	if rows == 1 and #line == 0 or col > #line and row + 1 >= rows then
-		return
+		return nil
 	end
 
 	local start_row, start_col = row, col
@@ -754,11 +755,28 @@ local function delete(row, col, direction)
 	end
 
 	vim.api.nvim_buf_set_text(utils.bufnr, start_row, start_col, end_row, end_col, {})
+
+	return { start_row, start_col }
 end
 
 M.previous_word = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	_ = delete_word(row - 1, col, utils.direction.left)
+end
+
+M.next_word = function()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	_ = delete_word(row - 1, col + 1, utils.direction.right)
+end
+
+M.previous = function()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	_ = delete(row - 1, col, utils.direction.left)
+end
+
+M.next = function()
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	_ = delete(row - 1, col + 1, utils.direction.right)
 end
 
 M.previous_word_normal_mode = function()
@@ -772,11 +790,6 @@ M.previous_word_normal_mode = function()
 			vim.api.nvim_win_set_cursor(0, { row + 1, col - 1 })
 		end
 	end
-end
-
-M.next_word = function()
-	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	_ = delete_word(row - 1, col + 1, utils.direction.right)
 end
 
 M.next_word_normal_mode = function()
@@ -795,14 +808,21 @@ M.next_word_normal_mode = function()
 	end
 end
 
-M.previous = function()
+M.previous_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete(row - 1, col, utils.direction.left)
+	local new_pos = delete(row - 1, col + 1, utils.direction.left)
+
+	if new_pos then
+		row, col = new_pos[1], new_pos[2]
+		if col > 0 then
+			vim.api.nvim_win_set_cursor(0, { row + 1, col - 1 })
+		end
+	end
 end
 
-M.next = function()
+M.next_normal_mode = function()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	delete(row - 1, col + 1, utils.direction.right)
+	_ = delete(row - 1, col + 1, utils.direction.right)
 end
 
 M.join = function(opts)
