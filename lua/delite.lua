@@ -716,7 +716,36 @@ local function delete(key, row, col, direction)
 		end
 	end
 
-	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "n", true)
+	if vim.fn.mode() == "i" then
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "n", true)
+	else
+		local rows = vim.api.nvim_buf_line_count(0)
+		if rows == 1 and #line == 0 or col > #line and row + 1 >= rows then
+			return nil
+		end
+
+		local start_row, start_col = row, col
+		local end_row, end_col = row, col
+
+		if direction == utils.direction.right then
+			start_col = col - 1
+
+			if col > #line and row + 1 < rows then
+				end_row = row + 1
+				end_col = 0
+			end
+		elseif direction == utils.direction.left then
+			if col > 0 then
+				start_col = col - 1
+			elseif row > 0 then
+				start_row = row - 1
+				line = vim.api.nvim_buf_get_lines(utils.bufnr, start_row, start_row + 1, true)[1]
+				start_col = #line
+			end
+		end
+
+		vim.api.nvim_buf_set_text(utils.bufnr, start_row, start_col, end_row, end_col, {})
+	end
 end
 
 M.previous_word = function()
