@@ -667,7 +667,7 @@ local function delete_word(row, col, direction)
 				return { context.line.row, context.line.col }
 			end
 		end
-		if delete_pattern(context, utils.seek_punctuation[direction], min_count) then
+		if delete_pattern(context, utils.seek_punctuation[direction], 0) then
 			return { context.line.row, context.line.col }
 		end
 	end
