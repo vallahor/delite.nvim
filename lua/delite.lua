@@ -24,8 +24,8 @@ local utils = {
 		right = "^%s*",
 	},
 	seek_punctuation = {
-		left = "%p$",
-		right = "^%p",
+		left = "%p",
+		right = "%p",
 	},
 }
 
@@ -83,10 +83,14 @@ M.config = {
 		},
 	},
 	allowed_multi_punctuation = {
-		left = "[%.%,%!%?%:%;%-%/%@%#%$%%%^%&%*%_%+%=%~%|%\\]*$",
-		right = "^[%.%,%!%?%:%;%-%/%@%#%$%%%^%&%*%_%+%=%~%|%\\]*",
+		left = ".,!?:;@#$%&*_+=~|/\\-",
+		right = ".,!?:;@#$%&*_+=~|/\\-",
 	},
 }
+
+local function escape_pattern(text)
+	return text:gsub("([%p])", "%%%1")
+end
 
 M.setup = function(config)
 	M.config = vim.tbl_deep_extend("force", vim.deepcopy(M.config), config or {})
@@ -104,13 +108,21 @@ M.setup = function(config)
 	end
 	M.config.default_pairs = nil
 
+	local optional_space = (M.config.allow_surrounding_space and "%s?") or ""
 	if M.config.defaults then
 		for _, default in ipairs(M.config.defaults) do
-			local optional_space = (M.config.allow_surrounding_space and "%s?") or ""
 			default.left = default.left .. optional_space .. "$"
 			default.right = "^" .. optional_space .. default.right
 		end
 	end
+
+	utils.seek_punctuation.left = utils.seek_punctuation.left .. optional_space .. "$"
+	utils.seek_punctuation.right = "^" .. optional_space .. utils.seek_punctuation.right
+
+	M.config.allowed_multi_punctuation.left =
+		string.format("[%s]*%s$", escape_pattern(M.config.allowed_multi_punctuation.left), optional_space)
+	M.config.allowed_multi_punctuation.right =
+		string.format("^%s[%s]*", optional_space, escape_pattern(M.config.allowed_multi_punctuation.right))
 end
 
 local function insert_undo()
@@ -156,10 +168,6 @@ local function insert_into(context, elem)
 		end
 	end
 	table.insert(context.default, elem)
-end
-
-local function escape_pattern(text)
-	return text:gsub("([%p])", "%%%1")
 end
 
 M.insert_pair_rule = function(config, context)
@@ -651,19 +659,21 @@ local function delete_word(row, col, direction)
 		end
 	end
 
-	if is_punctuation then
+	local min_count = (M.config.allow_surrounding_space and 1) or 0
+
+	if is_punctuation or M.config.allow_surrounding_space then
 		if M.config.multi_punctuation then
-			if delete_pattern(context, M.config.allowed_multi_punctuation[direction], 0) then
+			if delete_pattern(context, M.config.allowed_multi_punctuation[direction], min_count) then
 				return { context.line.row, context.line.col }
 			end
 		end
-		if delete_pattern(context, utils.seek_punctuation[direction], 0) then
+		if delete_pattern(context, utils.seek_punctuation[direction], min_count) then
 			return { context.line.row, context.line.col }
 		end
 	end
 
 	for _, default in pairs(M.config.defaults) do
-		if delete_pattern(context, default[direction], (M.config.allow_surrounding_space and 1) or 0) then
+		if delete_pattern(context, default[direction], min_count) then
 			return { context.line.row, context.line.col }
 		end
 	end
