@@ -51,6 +51,7 @@ M.config = {
 	disable_undo = false, -- Prevents grouping edits into a single undo step; each deletion starts a new undo chunk.
 	disable_right = false, -- Disables all pairs and rules for the right side.
 	disable_right_default_pairs = false, -- Disables right-side behavior only for the default pairs.
+	allow_surrounding_space = true, -- Whether to allow spaces around the word pattern (`%s?`) in `defaults`.
 	join_line = {
 		separator = " ",
 		times = 1,
@@ -67,18 +68,18 @@ M.config = {
 	defaults = {
 		-- One or more digits.
 		{
-			left = "%d%d+$",
-			right = "^%d%d+",
+			left = "%d%d+",
+			right = "%d%d+",
 		},
 		-- One or more uppercases.
 		{
-			left = "%u%u+$",
-			right = "^%u%u+",
+			left = "%u%u+",
+			right = "%u%u+",
 		},
 		-- Word deletion.
 		{
-			left = "%u?%l*[%d%u]?$",
-			right = "^%u?%l*%d?",
+			left = "%u?%l*[%d%u]?",
+			right = "%u?%l*%d?",
 		},
 	},
 	allowed_multi_punctuation = {
@@ -102,6 +103,14 @@ M.setup = function(config)
 		end
 	end
 	M.config.default_pairs = nil
+
+	if M.config.defaults then
+		for _, default in ipairs(M.config.defaults) do
+			local optional_space = (M.config.allow_surrounding_space and "%s?") or ""
+			default.left = default.left .. optional_space .. "$"
+			default.right = "^" .. optional_space .. default.right
+		end
+	end
 end
 
 local function insert_undo()
@@ -447,11 +456,12 @@ end
 
 ---@param context table
 ---@param pattern string
+---@param min_count integer
 ---@return boolean
-local function delete_pattern(context, pattern)
+local function delete_pattern(context, pattern, min_count)
 	local count = count_pattern(context.line.slice, pattern)
 
-	if count > 0 then
+	if count > min_count then
 		local start_col, end_col = calc_col(context.line.col, count, context.direction)
 
 		context.line.col = start_col
@@ -560,10 +570,6 @@ local function delete_word(row, col, direction)
 		return nil
 	end
 
-	if delete_pattern(context, utils.seek_spaces[direction]) then
-		return { context.line.row, context.line.col }
-	end
-
 	local bufnr = vim.api.nvim_get_current_buf()
 	local filetype = vim.bo[bufnr].filetype
 	local config_filetype = store.filetypes[filetype]
@@ -590,7 +596,7 @@ local function delete_word(row, col, direction)
 
 		for _, index in ipairs(config_filetype.patterns) do
 			local item = store.patterns.ft[index]
-			if not (item.disable_right and is_right) and delete_pattern(context, item.pattern[direction]) then
+			if not (item.disable_right and is_right) and delete_pattern(context, item.pattern[direction], 0) then
 				return { context.line.row, context.line.col }
 			end
 		end
@@ -626,7 +632,7 @@ local function delete_word(row, col, direction)
 
 	for _, item in ipairs(store.patterns.default) do
 		if not (item.disable_right and is_right) and not in_ignore_list(item, filetype) then
-			if delete_pattern(context, item.pattern[direction]) then
+			if delete_pattern(context, item.pattern[direction], 0) then
 				return { context.line.row, context.line.col }
 			end
 		end
@@ -647,19 +653,23 @@ local function delete_word(row, col, direction)
 
 	if is_punctuation then
 		if M.config.multi_punctuation then
-			if delete_pattern(context, M.config.allowed_multi_punctuation[direction]) then
+			if delete_pattern(context, M.config.allowed_multi_punctuation[direction], 0) then
 				return { context.line.row, context.line.col }
 			end
 		end
-		if delete_pattern(context, utils.seek_punctuation[direction]) then
+		if delete_pattern(context, utils.seek_punctuation[direction], 0) then
 			return { context.line.row, context.line.col }
 		end
 	end
 
 	for _, default in pairs(M.config.defaults) do
-		if delete_pattern(context, default[direction]) then
+		if delete_pattern(context, default[direction], (M.config.allow_surrounding_space and 1) or 0) then
 			return { context.line.row, context.line.col }
 		end
+	end
+
+	if delete_pattern(context, utils.seek_spaces[direction], 0) then
+		return { context.line.row, context.line.col }
 	end
 end
 

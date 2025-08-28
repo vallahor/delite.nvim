@@ -55,14 +55,29 @@ WordWord1| -> Word|
 WordWord12345| -> WordWord|
 Word         | -> Word|
 
+with allow_surrounding_space:
+word_word | -> word_|
+WordWord | -> Word|
+WordWORD | -> Word|
+WordWord1 | -> Word|
+WordWord12345 | -> WordWord|
+
 delete.next_word
 |word_word -> |_word
 |word-word -> |-word
 |WordWord -> |Word
 |WordWORD -> |WORD
+|WORDword -> |word
 |WordWord1  -> |Word1
 |12345Word -> |Word
 |     Word -> |Word
+
+with allow_surrounding_space:
+| word_word | -> |_word
+| 12345Word -> |Word
+| WordWORD -> |WORD
+| WORDword -> |word
+| WordWord1  -> |Word1
 
 ===| -> |
 !==| -> |
@@ -217,6 +232,7 @@ setup:
   disable_undo = false, -- Prevents grouping edits into a single undo step; each deletion starts a new undo chunk.
   disable_right = false, -- Disables all pairs and rules for the right side.
   disable_right_default_pairs = false, -- Disables right-side behavior only for the default pairs.
+  allow_surrounding_space = true, -- Whether to allow spaces around the word pattern (`%s?`) in `defaults`.
   join_line = {
     separator = " ",
     times = 1,
