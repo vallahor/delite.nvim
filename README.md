@@ -73,7 +73,7 @@ delete.next_word
 |     Word -> |Word
 
 with allow_surrounding_space:
-| word_word | -> |_word
+| word_word -> |_word
 | 12345Word -> |Word
 | WordWORD -> |WORD
 | WORDword -> |word
