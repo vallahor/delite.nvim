@@ -659,7 +659,8 @@ local function delete_word(row, col, direction)
 		end
 	end
 
-	local min_count = (M.config.allow_surrounding_space and 1) or 0
+	local is_space = line:sub(col, col):match("%s")
+	local min_count = (is_space and M.config.allow_surrounding_space and 1) or 0
 
 	if is_punctuation or M.config.allow_surrounding_space then
 		if M.config.multi_punctuation then
