@@ -255,25 +255,25 @@ setup:
     { left = "<", right = ">", not_filetypes = nil },
   },
   defaults = {
-    -- One or more digits.
-    {
-      left = "%d%d+$",
-      right = "^%d%d+",
-    },
-    -- One or more uppercases.
-    {
-      left = "%u%u+$",
-      right = "^%u%u+",
-    },
-    -- Word deletion.
-    {
-      left = "%u?%l*[%d%u]?$",
-      right = "^%u?%l*%d?",
-    },
+      -- One or more digits.
+      {
+          left = "%d%d+",
+          right = "%d%d+",
+      },
+      -- One or more uppercases.
+      {
+          left = "%u%u+",
+          right = "%u%u+",
+      },
+      -- Word deletion.
+      {
+          left = "%u?%l*[%d%u]?",
+          right = "%u?%l*%d?",
+      },
   },
   allowed_multi_punctuation = {
-    left = "[%.%,%!%?%:%;%-%/%@%#%$%%%^%&%*%_%+%=%~%|%\\]*$",
-    right = "^[%.%,%!%?%:%;%-%/%@%#%$%%%^%&%*%_%+%=%~%|%\\]*",
+      left = ".,!?:;@#$%&*_+<>=~|/\\-",
+      right = ".,!?:;@#$%&*_+<>=~|/\\-",
   },
 }
 ```
